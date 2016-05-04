@@ -1,0 +1,37 @@
+.my_container {
+	padding-top: 15px;
+}
+
+.center {
+	margin: auto;
+	width: 60%;
+	padding: 10px;
+	border: 1px solid;
+}
+
+.selected {
+	fill: orange;
+}
+
+.active {
+	fill: hotpink;
+	opacity: 0.5;
+}
+
+.none {
+	fill: white;
+	opacity: 1;
+}
+
+.background {
+	fill: none;
+	pointer-events: all;
+}
+
+.popup {
+	background-color: #e5f5ff;
+	border: 1px solid #ddd;
+	display: none;
+	padding: 10px;
+	position: absolute;
+}
