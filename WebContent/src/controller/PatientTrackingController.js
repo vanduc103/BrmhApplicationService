@@ -1,0 +1,332 @@
+var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 'ajoslin.promise-tracker', 'cgBusy']);
+
+datavisual.controller('PatientTrackingController', function($scope, $http, $interval) {
+	var BASE_URL = "http://localhost:9000/";
+	//var BASE_URL = "http://147.47.206.15:19000/";
+	$scope.message = 'Please Wait...';
+	$scope.backdrop = true;
+	$scope.promise = null;
+	$scope.loading = 'No data found !';
+	var timeFormat = 'MM/DD/YYYY HH:mm:ss';
+	var sectionList = [];
+	var sectionAnimationList = [];
+	$scope.inspectList = [];
+	$scope.encodedMac = "";
+	var inspectMacAddress = "";
+	var inspectFromTime = 0;
+	var inspectToTime = 0;
+	var mapSectionName = 
+	{"1": "출입구","2":"복도", "3":"환자대기실","4":"복도 및 출입구","5":"경증환자실","6":"복도 및 중증환자실","7":"중증환자실"};
+	
+	//init variable
+	var width = 525,
+    height = 427,
+    centered;
+	
+	var xScale = d3.scale.linear()
+    				.domain([0,624])
+					.range([0,width]);
+	var yScale = d3.scale.linear()
+    			.domain([0,527])
+				.range([0,height]);
+	var scaleWidth = xScale.range()[1] - xScale.range()[0];
+    var scaleHeight = yScale.range()[1] - yScale.range()[0];
+
+	var svg = d3.select("#brmh").append("svg")
+	    .attr("width", scaleWidth)
+	    .attr("height", scaleHeight)
+		.append("g");
+	var g = svg.append("g");
+	var centerJson = [];
+	var circleSelection;
+	//function init
+	var init = function() {
+		//draw polygon
+		var lineFunction = d3.svg.line()
+		                        .x(function(d) { return xScale(d.x); })
+		                        .y(function(d) { return yScale(d.y); })
+		                        .interpolate("linear");
+	
+		d3.json("../json/polygon_data.json", function(error, polygon) {
+			if(error) {
+				alert(error);
+			}
+			//data from polygonData is push to lineFunction to draw line
+			g.append("g")
+					.selectAll("path")
+					.data(polygon.section)
+					.enter()
+					.append("path")
+					.attr("d", lineFunction)
+					.attr("stroke", "blue")
+			        .attr("stroke-width", 2)
+			        .attr("fill", "white")
+			        .on("mouseover", mouseovered);
+		
+			var text = g.append("g").selectAll("text")
+									.data(polygon.text)
+									.enter()
+									.append("text");
+			//for rotate -> not set x, y but set translate in transform attr.
+			var textLabels = text
+								.text(function(d) {return d[0].text})
+								.attr("font-family", "sans-serif")
+								.attr("font-size", function(d) {return d[0].fontSize})
+								.attr("transform", function(d) {return "translate (" + xScale(d[0].x) + "," + yScale(d[0].y) + ") rotate("+d[0].transform+")"} )
+								.attr("fill", "black")
+								.style("opacity", 0.5);
+					
+			centerJson = polygon.center;
+		});
+		
+		function mouseovered(active, i) {
+			if(inspectMacAddress === '') return;
+			var className = this.getAttribute('class');
+			var content = '';
+			if(className === 'selected') {
+				content = 'This person was in this section';
+			}
+			else {
+				content = 'This person was not in this section';
+			}
+			//show the popup
+			$('#detail-popup').html(content);
+			$('#detail-popup').css('top', d3.event.pageY);
+			$('#detail-popup').css('left', d3.event.pageX);
+			$('#detail-popup').fadeIn('fast');
+		};
+	};
+	
+	$scope.doInspect = function() {
+		//get time
+		var fromTime = $("#datetimepicker1").data("DateTimePicker").date();
+		if(fromTime === null) {
+			alert('You must input Date Time !');
+			return false;
+		}
+		fromTime = fromTime.unix() * 1000;
+		var toTime = $("#datetimepicker2").data("DateTimePicker").date();
+		if(toTime === null) {
+			toTime = new Date().getTime();
+		}
+		else {
+			toTime = toTime.unix() * 1000;
+		}
+		var macAddress = $("#searchMac").val();
+		if(macAddress.trim() === '') {
+			alert('You must input MAC address !');
+			return false;
+		}
+		inspectFromTime = fromTime;
+		inspectToTime = toTime;
+		inspectMacAddress = macAddress;
+		//encode mac address
+		$scope.encodedMac = window.btoa(macAddress);
+		//search data
+		$scope.inspectList = [];
+		$scope.loading = 'Searching...';
+		var url = BASE_URL + 'inspectMac?fromTime=' + fromTime + '&toTime=' + toTime
+						+ '&macAddress=' + macAddress;
+		$http.get(url).then(function(response) {
+			var data = response.data;
+			sectionList = []; //reset
+			for(var i in data) {
+				data[i].index = (parseInt(i)+1);
+				data[i].sectionName = mapSectionName[data[i].sectionId];
+				sectionList = data[i].sectionList;
+				data[i].peopleContacted = 'Calculating...';
+			}
+			$scope.inspectList = data;
+			if($scope.inspectList.length <= 0) {
+				$scope.loading = 'No data found !';
+				return;
+			}
+			//clear highlight
+			d3.select("#animationPerson").remove();
+			g.selectAll("path").classed("selected", false);
+			//highlight section
+			g.selectAll("path")
+		      .classed("selected", function(d, i) {a = sectionList.indexOf(parseInt(i+1)) > -1;return a;});
+			//get section animation list by loop inspectList inverse
+			sectionAnimationList = []; //reset
+			var inspectListLength = data.length;
+			for(var i = inspectListLength-1; i >= 0; i--) {
+				sectionAnimationList.push({'sectionId':data[i].sectionId, 'fromTime':data[i].fromTime});
+				if(i === 0) {
+					//add the to time with the last section
+					sectionAnimationList.push({'sectionId':data[i].sectionId, 'fromTime':data[i].toTime});
+				}
+			}
+			//get patient contacted in each section and each period of time
+			var inspectList = $scope.inspectList;
+			var paramList = ""; //create paramList to request server
+			for(var i in inspectList) {
+				paramList += inspectList[i].fromTime + ","
+							+ inspectList[i].toTime + ","
+							+ inspectList[i].sectionId + ",";
+			}
+			//remove last separate char
+			paramList = paramList.slice(0, paramList.length - 1);
+			if(paramList.length === 0) return;
+			//request server
+			$http({
+			    method: 'POST',
+			    url: BASE_URL + 'countPeopleContacted',
+			    data: "paramList=" + paramList,
+			    headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			}).then(function(response) {
+				var data = response.data;
+				//add to inspectList
+				for(var i in inspectList) {
+					inspectList[i].peopleContacted = data[i].peopleContacted;
+				}
+			});
+		});
+	};
+	
+	$scope.doAnimate = function() {
+		var length = sectionAnimationList.length;
+		if(length === 0) return;
+		//set first position
+		var sectionId = sectionAnimationList[0].sectionId;
+		var fromTime = sectionAnimationList[0].fromTime;
+		var fromTimeFormated = dateFormat(fromTime, timeFormat);
+		var cx = xScale(centerJson[sectionId - 1].cx);
+		var cy = yScale(centerJson[sectionId - 1].cy);
+		
+		d3.select("#animationPerson").remove();
+		circleSelection = g
+			.append("g")
+			.attr("id", "animationPerson")
+			.attr("transform", function(d) {return "translate("+cx+","+cy+")"});
+		circleSelection
+			.append("circle")
+	        .attr("r", 10)
+	        .style("fill", "red");
+		var textSelection = circleSelection
+    		.append("text")
+    		.attr("id", "animationText")
+			.attr("x", 0)
+			.attr("y", -10)
+			.text(""+fromTimeFormated)
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "12px")
+			.style("font-weight", "normal")
+			.attr("text-anchor", "middle")
+			.attr("fill", "black");
+		//loop for sectionList to make animation
+		for(var i = 1;i < length; i++) {
+			var sectionId = sectionAnimationList[i].sectionId;
+			var fromTime = sectionAnimationList[i].fromTime;
+			var fromTimeFormated = dateFormat(fromTime, timeFormat);
+			var cx = xScale(centerJson[sectionId - 1].cx);
+			var cy = yScale(centerJson[sectionId - 1].cy);
+			circleSelection = circleSelection
+								.transition().duration(2000)
+								.attr("transform", function(d) {return "translate("+cx+","+cy+")"});
+			textSelection = textSelection
+								.transition().duration(2000)
+								.text("" + fromTimeFormated);
+		}
+	};
+	
+	$(document).on('click', 'button.btn.btn-default.inspectButton', function(e) {
+    	var id = e.target.id;
+    	var encodedMac = id.slice(id.indexOf('_') + 1);
+    	var macAddress = window.atob(encodedMac);
+    	//inspect
+    	$("#searchMac").val(macAddress);
+    	$scope.doInspect();
+    });
+	
+	$scope.showContactedDetail = function(event, peopleContacted, fromTime, toTime, sectionId) {
+		if(peopleContacted === 0) {
+			return;
+		}
+		var url = BASE_URL + 'getPeopleDetail?fromTime=' + fromTime + '&toTime=' + toTime
+							+ '&sectionId=' + sectionId;
+		$http.get(url).then(function(response) {
+			var content = '';
+			content += '<h3>' + mapSectionName[sectionId] + '</h3>';
+			content += '<table class="table table-bordered" style="width:100%">';
+			content += '<thead>';
+			content += '<tr>';
+			content += '<th style="width:10px">#</th>';
+			content += '<th>MAC address</th>';
+			content += '<th>&nbsp;</th>';
+			content += '</tr>';
+			content += '</thead>';
+			content += '<tbody>';
+			var data = response.data;
+			var index = 0;
+			for(var i in data) {
+				index = i;
+				var macAddress = data[i].macAddress;
+				if(macAddress === inspectMacAddress) {
+					index -= 1;
+					continue;
+				}
+				var encodedMac = window.btoa(macAddress);
+				content += '<tr>';
+				content += '<td>' + (parseInt(index)+1) + '</td>';
+				content += '<td>' + encodedMac + '</td>';
+				content += '<td><button class="btn btn-default inspectButton" id="inspectButton_'+encodedMac+'">Inspect</button></td>';
+				content += '</tr>';
+			}
+			content += '</tbody>';
+			content += '</table>';
+			//show the popup
+			$('#detail-popup').html(content);
+			$('#detail-popup').css('top', event.pageY);
+			$('#detail-popup').css('left', screen.width/2);
+			$('#detail-popup').fadeIn('fast');
+		});
+	};
+	
+	$('html').click(function() {
+		//Hide the popup
+		$('#detail-popup').fadeOut('fast');
+	});
+
+	$('#detail-popup').click(function(event){
+		//stop propagation
+	    //event.stopPropagation();
+	});
+	
+	function dateFormat(dateValue, format) {
+		var d = moment(dateValue);
+		return d.format(format);
+	};
+	
+	$scope.exportPeopleContacted = function(level) {
+		//prepare the param
+		var inspectList = $scope.inspectList;
+		var paramList = ""; //create paramList to request server
+		for(var i in inspectList) {
+			paramList += inspectList[i].fromTime + ","
+						+ inspectList[i].toTime + ","
+						+ inspectList[i].sectionId + ",";
+		}
+		//remove last separate char
+		paramList = paramList.slice(0, paramList.length - 1);
+		if(paramList.length === 0) return;
+		//set form attribute to submit
+		var form = document.getElementById("frmExportPeopleContacted");
+		form.action = BASE_URL + "exportPeopleContacted";
+		$("#paramList").val(paramList);
+		$("#inspectMac").val(inspectMacAddress);
+		$("#level").val(level);
+		$("#hiddenFromTime").val(inspectFromTime);
+		$("#hiddenToTime").val(inspectToTime);
+		//submit form
+		form.submit();
+	}
+	
+	//init
+	init();
+	$('#datetimepicker1, #datetimepicker2').datetimepicker({
+		format: 'YYYY-MM-DD HH:mm:ss'
+	});
+});
+
+

@@ -1,0 +1,176 @@
+<html lang="en" ng-app="brmh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Javascript -->
+<script type="text/javascript" src="../js/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="../js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../js/angular.min.js"></script>
+<script type="text/javascript" src="../js/angular-animate.min.js"></script>
+<script type="text/javascript" src="../js/ui-bootstrap.js"></script>
+<script type="text/javascript" src="../js/ui-bootstrap-tpls.js"></script>
+<script type="text/javascript" src="../js/jquery-ui-slider-pips.js"></script>
+<script type="text/javascript" src="../js/highcharts.js"></script>
+<!-- ajoslin.promise-tracker -->
+<script type="text/javascript" src="../js/promise-tracker.js"></script>
+<script type="text/javascript" src="../js/promise-tracker-http-interceptor.js"></script>
+<!-- cg-busy -->
+<script type="text/javascript" src="../js/angular-busy.js"></script>
+<!-- D3JS -->
+<script type="text/javascript" src="../js/d3.min.js"></script>
+<!-- Datetime picker -->
+<script type="text/javascript" src="../js/moment.min.js"></script>
+<script type="text/javascript" src="../js/bootstrap-datetimepicker.min.js"></script>
+
+<!-- CSS -->
+<link href="../css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="../css/bootstrap-theme.min.css" rel="stylesheet"
+	type="text/css">
+<link href="../css/font-awesome.min.css" rel="stylesheet"
+	type="text/css">
+<link href="../css/normalize.css" rel="stylesheet" type="text/css">
+<link href="../css/jquery-ui.css" rel="stylesheet" type="text/css">
+<link href="../css/jquery-ui-slider-pips.css" rel="stylesheet"
+	type="text/css">
+<!-- cg-busy -->
+<link href="../css/angular-busy.css" rel="stylesheet" type="text/css">
+<!-- Datetime picker -->
+<link rel="stylesheet" href="../css/bootstrap-datetimepicker.min.css" />
+
+<!-- Customize CSS -->
+<link href="../css/mystyle.css" rel="stylesheet"
+	type="text/css">
+
+<!-- Controller -->
+<script type="text/javascript" src="controller/PatientTrackingController.js"></script>
+
+</head>
+<body ng-controller="PatientTrackingController">
+
+	<div>
+		<header class="wrapper">
+            <div class="center2"><img src="../images/logo.png" alt="BRMH" /></div>
+        </header>
+		<nav>
+            <div class="center2 wrapper">
+                <a class="nav-item" href="index.html" title="Real-Time Tracking">Real-time Tracking</a>
+                <a class="nav-item current" href="patient_tracking.html" title="Inspect Patient">Inspect Patient</a>
+                <a class="nav-item" href="section_tracking.html" title="Inspect Section">Inspect Section</a>
+                <a class="nav-item" href="time_tracking.html" title="Inspect Time">Inspect Time</a>
+            </div>
+        </nav>
+	</div>
+	<div class="container">
+		<div class="row text-center">
+			<label class="text-normal">
+				Patient Inspecting
+			</label>
+		</div>
+	</div>
+	<div class="container">
+		<div class="col-md-12">
+			<div class="col-md-6">
+				<span class="col-md-12 text-center">Map</span>
+				<div id="brmh" class="col-md-12 center" style="width: 100% !important; height: 440px"></div>
+			</div>
+			<div class="col-md-6">
+				<span class="col-md-12 text-center">Search conditions</span>
+				<div id="searchDiv" class="col-md-12 center" style="width: 100% !important; height: 440px">
+					<div class="col-md-12 form-group">
+						<label>Date Time: </label> 
+						<div class='input-group date' id='datetimepicker1'>
+		                    <input type='text' class="form-control" id="searchFromTime"/>
+		                    <span class="input-group-addon">
+		                        <span class="glyphicon glyphicon-calendar"></span>
+		                    </span>
+		                </div>
+					</div>
+					<div class="col-md-12 form-group">
+						<div class='input-group date' id='datetimepicker2'>
+		                    <input type='text' class="form-control" id="searchToTime"/>
+		                    <span class="input-group-addon">
+		                        <span class="glyphicon glyphicon-calendar"></span>
+		                    </span>
+		                </div>
+					</div>
+					<div class="col-md-6 form-group">
+						<label>MAC Address (*): </label> 
+						<input type="password"
+							class="form-control" id="searchMac" ng-enter="doInspect()" />
+					</div>
+					<div class="col-md-12 form-group">
+						<div class="col-md-6 no-paddingleft">
+							<button type="button" class="btn btn-default form-control"
+							id="btnSearch" ng-click="doAnimate()">Animate</button>
+						</div>
+						<div class="col-md-6 no-paddingright">
+							<button type="button" class="btn btn-primary form-control"
+							id="btnSearch" ng-click="doInspect()">Inspect</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="container responsive col-md-12">
+			<div class="col-md-12" style="margin-top: 5px">
+				<div class="col-md-6 no-paddingleft" style="text-align: left; padding-top: 10px">
+					MAC address: <label class="text-primary">{{encodedMac}}</label>
+				</div>
+				<div class="col-md-6 no-paddingright" style="text-align: right" ng-show="inspectList.length > 0">
+					<form id="frmExportPeopleContacted" method="post" action="">
+						<input type="hidden" id="paramList" name="paramList">
+						<input type="hidden" id="inspectMac" name="inspectMac">
+						<input type="hidden" id="level" name="level">
+						<input type="hidden" id="hiddenFromTime" name="fromTime">
+						<input type="hidden" id="hiddenToTime" name="toTime">
+						 <div class="dropdown" style="float: right;">
+						  <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Export file
+						  <span class="caret"></span></button>
+						  <ul class="dropdown-menu">
+						    <li><a href="#" ng-click="exportPeopleContacted(1)">Level 1</a></li>
+						    <li><a href="#" ng-click="exportPeopleContacted(2)">Level 2</a></li>
+						  </ul>
+						</div>
+					</form>
+				</div>
+			</div>
+			<table class="table table-bordered table-hover">
+				<thead>
+					<tr>
+						<th class="col-md-1" style="width: 10px">#</th>
+						<th class="col-md-4">From Time</th>
+						<th class="col-md-4">To Time</th>
+						<th class="col-md-2 text-center">Section</th>
+						<th class="col-md-2 text-center">People Contacted</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-show="inspectList.length <= 0">
+						<td colspan="5" style="text-align: center;">{{loading}}</td>
+					</tr>
+					<tr ng-repeat="inspect in inspectList">
+						<td>{{inspect.index}}</td>
+						<td>{{inspect.fromTime | date: 'MM/dd/yyyy HH:mm:ss'}}</td>
+						<td>{{inspect.toTime | date: 'MM/dd/yyyy HH:mm:ss'}}</td>
+						<td class="text-center">{{inspect.sectionName}}</td>
+						<td class="text-center">
+							<a ng-click="showContactedDetail($event, inspect.peopleContacted, inspect.fromTime, inspect.toTime, inspect.sectionId)">{{inspect.peopleContacted}}</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div id="detail-popup" class="popup">
+    </div>
+    <footer>
+         <div class="wrapper center2">
+             <div><img src="../images/footer-logo.png" alt="BRMH" /></div>
+             <div>SNU Boramae Medical Center</div>
+             <div>SNU Big Data Institute</div>
+         </div>
+     </footer>
+</body>
+</html>

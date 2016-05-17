@@ -19,6 +19,8 @@
 <script type="text/javascript" src="../js/angular-busy.js"></script>
 <!-- D3JS -->
 <script type="text/javascript" src="../js/d3.min.js"></script>
+<!-- Tooltipster -->
+<script type="text/javascript" src="../js/jquery.tooltipster.js"></script>
 
 <!-- CSS -->
 <link href="../css/bootstrap.min.css" rel="stylesheet" type="text/css">
@@ -32,6 +34,8 @@
 	type="text/css">
 <!-- cg-busy -->
 <link href="../css/angular-busy.css" rel="stylesheet" type="text/css">
+<!-- tooltipster -->
+<link href="../css/tooltipster.css" rel="stylesheet" type="text/css">
 
 <!-- Customize CSS -->
 <link href="../css/mystyle.css" rel="stylesheet"
@@ -43,53 +47,38 @@
 </head>
 <body ng-controller="RealtimeTrackingController">
 
-	<div class="container">
-		<div style="padding-bottom: 5px">
-			<image src="../images/logo.png" height="60px" />
-		</div>
-		<nav class="navbar navbar-inverse">
-			<div class="container-fluid">
-				<!-- Brand and toggle get grouped for better mobile display -->
-				<div class="navbar-header">
-					<button type="button" class="navbar-toggle collapsed"
-						data-toggle="collapse" data-target="#bs-example-navbar-collapse-1"
-						aria-expanded="false">
-						<span class="sr-only">Toggle navigation</span> <span
-							class="icon-bar"></span> <span class="icon-bar"></span> <span
-							class="icon-bar"></span>
-					</button>
-				</div>
-
-				<!-- Collect the nav links, forms, and other content for toggling -->
-				<div class="collapse navbar-collapse"
-					id="bs-example-navbar-collapse-1">
-					<ul class="nav navbar-nav">
-						<li class="active"><a href="index.html">Realtime Tracking<span
-								class="sr-only">(current)</span></a></li>
-						<li><a href="index2.html">Inspect Patient</a></li>
-						<li><a href="index3.html">Inspect Section</a></li>
-						<li><a href="index4.html">Inspect Time</a></li>
-					</ul>
-				</div>
-				<!-- /.navbar-collapse -->
-			</div>
-			<!-- /.container-fluid -->
-		</nav>
+	<div>
+		<header class="wrapper">
+            <div class="center2"><img src="../images/logo.png" alt="BRMH" /></div>
+        </header>
+		<nav>
+            <div class="center2 wrapper">
+                <a class="nav-item current" href="index.html" title="Real-Time Tracking">Real-time Tracking</a>
+                <a class="nav-item" href="patient_tracking.html" title="Inspect Patient">Inspect Patient</a>
+                <a class="nav-item" href="section_tracking.html" title="Inspect Section">Inspect Section</a>
+                <a class="nav-item" href="time_tracking.html" title="Inspect Time">Inspect Time</a>
+            </div>
+        </nav>
 	</div>
 	<div class="container">
-		<div class="row">
-			<div class="col-md-12 text-center">
-				<label class="text-normal">
-				Real-time Tracking
-				</label>
-			</div>
+		<div class="row text-center">
+			<label class="text-normal">
+				Real-time Tracking<br>
+				(click an icon to see detail)
+			</label>
 		</div>
 	</div>
 	<div class="container">
 		<div id="brmh" class="center"></div>
 	</div>
 	<div id="section-popup" class="popup">
-        
     </div>
+    <footer>
+         <div class="wrapper center2">
+             <div><img src="../images/footer-logo.png" alt="BRMH" /></div>
+             <div>SNU Boramae Medical Center</div>
+             <div>SNU Big Data Institute</div>
+         </div>
+     </footer>
 </body>
 </html>
