@@ -110,6 +110,17 @@
 							id="btnSearch" ng-click="doInspect()">Inspect</button>
 						</div>
 					</div>
+					<div class="col-md-12">
+						<div>
+							<span style="display: block; float: left; margin-right: 5px; width: 30px; height: 30px; background-color: orange"></span>
+							<span>People was in sections</span>
+						</div>
+						<br>
+						<div>
+							<span style="display: block; float: left; border: 1px solid blue; margin-right: 5px; width: 30px; height: 30px; background-color: white"></span>
+							<span>People was not in sections</span>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -119,18 +130,26 @@
 					MAC address: <label class="text-primary">{{encodedMac}}</label>
 				</div>
 				<div class="col-md-6 no-paddingright" style="text-align: right" ng-show="inspectList.length > 0">
+					<div class="dropdown" style="float: right;">
+					  <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+					  Contact Graph <span class="caret"></span></button>
+					  <ul class="dropdown-menu">
+					    <li><a href="#" ng-click="showGraphPeopleContacted(1)">Level 1 (Direct)</a></li>
+					    <li><a href="#" ng-click="showGraphPeopleContacted(2)">Level 2 (In Direct)</a></li>
+					  </ul>
+					</div>
 					<form id="frmExportPeopleContacted" method="post" action="">
 						<input type="hidden" id="paramList" name="paramList">
 						<input type="hidden" id="inspectMac" name="inspectMac">
 						<input type="hidden" id="level" name="level">
 						<input type="hidden" id="hiddenFromTime" name="fromTime">
 						<input type="hidden" id="hiddenToTime" name="toTime">
-						 <div class="dropdown" style="float: right;">
+					 	<div class="dropdown" style="float: right;">
 						  <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Export file
 						  <span class="caret"></span></button>
 						  <ul class="dropdown-menu">
-						    <li><a href="#" ng-click="exportPeopleContacted(1)">Level 1</a></li>
-						    <li><a href="#" ng-click="exportPeopleContacted(2)">Level 2</a></li>
+						    <li><a href="#" ng-click="exportPeopleContacted(1)">Level 1 (Direct)</a></li>
+						    <li><a href="#" ng-click="exportPeopleContacted(2)">Level 2 (In Direct)</a></li>
 						  </ul>
 						</div>
 					</form>
@@ -143,7 +162,7 @@
 						<th class="col-md-4">From Time</th>
 						<th class="col-md-4">To Time</th>
 						<th class="col-md-2 text-center">Section</th>
-						<th class="col-md-2 text-center">People Contacted</th>
+						<th class="col-md-2 text-center">Direct Contact People Num</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -163,8 +182,12 @@
 			</table>
 		</div>
 	</div>
-	<div id="detail-popup" class="popup">
+	<div id="graph-popup" class="popup">
+		<button class="btn btn-default" style="width: 20px; height: 20px; padding: 0px 3px; float: right;" ng-click="closePopup()">X</button>
+		<div style="text-align: center;"><h3>Contact Graph</h3></div>
+		<div id="svg" style="border: 1px solid black;"></div>
     </div>
+    <div id="detail-popup" class="popup"></div>
     <footer>
          <div class="wrapper center2">
              <div><img src="../images/footer-logo.png" alt="BRMH" /></div>

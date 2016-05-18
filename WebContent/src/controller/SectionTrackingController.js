@@ -133,6 +133,12 @@ datavisual.controller('SectionTrackingController', function($scope, $http, $inte
 		});
 	};
 	
+	$scope.inspectMac = function(macAddress) {
+		//call inspect patient page
+    	sessionStorage.setItem("inspectMac", macAddress);
+    	document.location.href = 'patient_tracking.html';
+	}
+	
 	//init
 	init();
 	$('#datetimepicker1, #datetimepicker2').datetimepicker({

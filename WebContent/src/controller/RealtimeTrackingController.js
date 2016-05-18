@@ -244,8 +244,8 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			content += '<tr>';
 			content += '<th style="width:10px">#</th>';
 			content += '<th>MAC address</th>';
-			content += '<th>From</th>';
-			content += '<th>Period</th>';
+			//content += '<th>From</th>';
+			//content += '<th>Period</th>';
 			content += '</tr>';
 			content += '</thead>';
 			content += '<tbody>';
@@ -253,19 +253,19 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			for(var i in data) {
 				var macAddress = data[i].macAddress;
 				var encodedMac = window.btoa(macAddress);
-				var firstTime = data[i].firstTime;
+				/*var firstTime = data[i].firstTime;
 				var periodOfTime = data[i].periodOfTime;
 				var second = periodOfTime / 1000; //second
 				var minute = Math.round(second/60);
 				var hour = Math.round(minute/60);
 				var periodOfTimeFormatted = (hour>0) ? hour + ' hour(s)'
 											: (minute>0) ? minute + ' minute(s)'
-													: second + ' seconds';
+													: second + ' seconds';*/
 				content += '<tr>';
 				content += '<td>' + (parseInt(i)+1) + '</td>';
-				content += '<td>' + macAddress + '</td>';
-				content += '<td>' + dateFormat(firstTime,'hh:mm:ss') + '</td>';
-				content += '<td>' + periodOfTimeFormatted + '</td>';
+				content += '<td><a class="a inspectMac" id="mac_'+macAddress+'">' + macAddress + '</a></td>';
+				//content += '<td>' + dateFormat(firstTime,'hh:mm:ss') + '</td>';
+				//content += '<td>' + periodOfTimeFormatted + '</td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';
@@ -277,6 +277,14 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			$('#section-popup').fadeIn('fast');
 		});
 	};
+	
+	$(document).on('click', 'td a.a.inspectMac', function(e) {
+    	var id = e.target.id;
+    	var inspectMac = id.slice(id.indexOf('_') + 1);
+    	//call inspect patient page
+    	sessionStorage.setItem("inspectMac", inspectMac);
+    	document.location.href = 'patient_tracking.html';
+    });
 	
 	$('html').click(function() {
 		//Hide the popup

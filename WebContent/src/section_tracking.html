@@ -117,7 +117,7 @@
 					<tr>
 						<th class="col-md-1" style="width: 10px">#</th>
 						<th class="col-md-3">MAC address</th>
-						<th class="col-md-3">Period of Time</th>
+						<th class="col-md-3">Time Duration in Section</th>
 						<th class="col-md-6">Detail</th>
 					</tr>
 				</thead>
@@ -127,7 +127,7 @@
 					</tr>
 					<tr ng-repeat="inspect in inspectList">
 						<td>{{inspect.index}}</td>
-						<td>{{inspect.encodedMac}}</td>
+						<td><a class="a" ng-click="inspectMac(inspect.macAddress)" title="Inspect this Mac address">{{inspect.encodedMac}}</a></td>
 						<td>{{inspect.periodOfTime}}</td>
 						<td>
 							{{inspect.firstTime | date: 'MM/dd/yyyy HH:mm:ss'}} ~ 

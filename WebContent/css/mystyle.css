@@ -58,6 +58,7 @@ footer {
 	display: none;
 	padding: 10px;
 	position: absolute;
+	z-index: 1000;
 }
 
 .no-paddingleft {
@@ -81,8 +82,19 @@ div.tooltip {
     font: 18px sans-serif;
     font-weight: bold;
     background: lightsteelblue;	
-    border: 0px;		
+    border: 1px solid black;		
     border-radius: 4px;			
     pointer-events: none;			
 }
+
+.node {
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: 1;
+}
+
 

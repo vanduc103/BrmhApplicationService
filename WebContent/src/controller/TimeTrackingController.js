@@ -117,8 +117,8 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 			content += '<tr>';
 			content += '<th style="width:10px">#</th>';
 			content += '<th>MAC address</th>';
-			content += '<th>Period</th>';
-			content += '<th>First ~ Last</th>';
+			//content += '<th>Period</th>';
+			//content += '<th>First ~ Last</th>';
 			content += '</tr>';
 			content += '</thead>';
 			content += '<tbody>';
@@ -126,7 +126,7 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 			for(var i in data) {
 				var macAddress = data[i].macAddress;
 				var encodedMac = window.btoa(macAddress);
-				var firstTime = data[i].firstTime;
+				/*var firstTime = data[i].firstTime;
 				var lastTime = data[i].lastTime;
 				var periodOfTime = data[i].periodOfTime;
 				var second = periodOfTime / 1000; //second
@@ -134,13 +134,13 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 				var hour = Math.round(minute/60);
 				var periodOfTimeFormatted = (hour>0) ? hour + ' hour(s)'
 											: (minute>0) ? minute + ' minute(s)'
-													: second + ' seconds';
+													: second + ' seconds';*/
 				content += '<tr>';
 				content += '<td>' + (parseInt(i)+1) + '</td>';
-				content += '<td>' + encodedMac + '</td>';
-				content += '<td>' + periodOfTimeFormatted + '</td>';
-				content += '<td>' + dateFormat(firstTime,'MM/DD/YYYY HH:mm:ss');
-				content += ' ~ ' + dateFormat(lastTime,'MM/DD/YYYY HH:mm:ss') + '</td>';
+				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + encodedMac + '</a></td>';
+				//content += '<td>' + periodOfTimeFormatted + '</td>';
+				//content += '<td>' + dateFormat(firstTime,'MM/DD/YYYY HH:mm:ss');
+				//content += ' ~ ' + dateFormat(lastTime,'MM/DD/YYYY HH:mm:ss') + '</td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';
@@ -152,6 +152,14 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 			$('#detail-popup').fadeIn('fast');
 		});
 	};
+	
+	$(document).on('click', 'td a.a.inspectMac', function(e) {
+    	var id = e.target.id;
+    	var inspectMac = id.slice(id.indexOf('_') + 1);
+    	//call inspect patient page
+    	sessionStorage.setItem("inspectMac", inspectMac);
+    	document.location.href = 'patient_tracking.html';
+    });
 	
 	function dateFormat(dateValue, format) {
 		var d = moment(dateValue);
