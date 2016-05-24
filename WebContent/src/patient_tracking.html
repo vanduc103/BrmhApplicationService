@@ -18,6 +18,8 @@
 <script type="text/javascript" src="../js/promise-tracker-http-interceptor.js"></script>
 <!-- cg-busy -->
 <script type="text/javascript" src="../js/angular-busy.js"></script>
+<!-- dirPagination -->
+<script type="text/javascript" src="../js/dirPagination.js"></script>
 <!-- D3JS -->
 <script type="text/javascript" src="../js/d3.min.js"></script>
 <!-- Datetime picker -->
@@ -56,9 +58,9 @@
 		<nav>
             <div class="center2 wrapper">
                 <a class="nav-item" href="index.html" title="Real-Time Tracking">Real-time Tracking</a>
-                <a class="nav-item current" href="patient_tracking.html" title="Inspect Patient">Inspect Patient</a>
-                <a class="nav-item" href="section_tracking.html" title="Inspect Section">Inspect Section</a>
                 <a class="nav-item" href="time_tracking.html" title="Inspect Time">Inspect Time</a>
+                <a class="nav-item" href="section_tracking.html" title="Inspect Section">Inspect Section</a>
+                <a class="nav-item current" href="patient_tracking.html" title="Inspect Patient">Inspect Patient</a>
             </div>
         </nav>
 	</div>
@@ -78,6 +80,11 @@
 			<div class="col-md-6">
 				<span class="col-md-12 text-center">Search conditions</span>
 				<div id="searchDiv" class="col-md-12 center" style="width: 100% !important; height: 440px">
+					<div class="col-md-6 form-group">
+						<label>MAC Address (*): </label> 
+						<input type="text" style="width: 213%"
+							class="form-control" id="searchMac" ng-enter="doInspect(1)" />
+					</div>
 					<div class="col-md-12 form-group">
 						<label>Date Time: </label> 
 						<div class='input-group date' id='datetimepicker1'>
@@ -95,11 +102,6 @@
 		                    </span>
 		                </div>
 					</div>
-					<div class="col-md-6 form-group">
-						<label>MAC Address (*): </label> 
-						<input type="password"
-							class="form-control" id="searchMac" ng-enter="doInspect()" />
-					</div>
 					<div class="col-md-12 form-group">
 						<div class="col-md-6 no-paddingleft">
 							<button type="button" class="btn btn-default form-control"
@@ -107,7 +109,7 @@
 						</div>
 						<div class="col-md-6 no-paddingright">
 							<button type="button" class="btn btn-primary form-control"
-							id="btnSearch" ng-click="doInspect()">Inspect</button>
+							id="btnSearch" ng-click="doInspect(1)">Inspect</button>
 						</div>
 					</div>
 					<div class="col-md-12">
@@ -127,7 +129,7 @@
 		<div class="container responsive col-md-12">
 			<div class="col-md-12" style="margin-top: 5px">
 				<div class="col-md-6 no-paddingleft" style="text-align: left; padding-top: 10px">
-					MAC address: <label class="text-primary">{{encodedMac}}</label>
+					Total results: <label class="text-primary">{{total_count}}</label>
 				</div>
 				<div class="col-md-6 no-paddingright" style="text-align: right" ng-show="inspectList.length > 0">
 					<div class="dropdown" style="float: right;">
@@ -135,7 +137,7 @@
 					  Contact Graph <span class="caret"></span></button>
 					  <ul class="dropdown-menu">
 					    <li><a href="#" ng-click="showGraphPeopleContacted(1)">Level 1 (Direct)</a></li>
-					    <li><a href="#" ng-click="showGraphPeopleContacted(2)">Level 2 (In Direct)</a></li>
+					    <!-- <li><a href="#" ng-click="showGraphPeopleContacted(2)">Level 2 (In Direct)</a></li> -->
 					  </ul>
 					</div>
 					<form id="frmExportPeopleContacted" method="post" action="">
@@ -149,7 +151,7 @@
 						  <span class="caret"></span></button>
 						  <ul class="dropdown-menu">
 						    <li><a href="#" ng-click="exportPeopleContacted(1)">Level 1 (Direct)</a></li>
-						    <li><a href="#" ng-click="exportPeopleContacted(2)">Level 2 (In Direct)</a></li>
+						    <!-- <li><a href="#" ng-click="exportPeopleContacted(2)">Level 2 (In Direct)</a></li> -->
 						  </ul>
 						</div>
 					</form>
@@ -169,7 +171,8 @@
 					<tr ng-show="inspectList.length <= 0">
 						<td colspan="5" style="text-align: center;">{{loading}}</td>
 					</tr>
-					<tr ng-repeat="inspect in inspectList">
+					<tr dir-paginate="inspect in inspectList|itemsPerPage:itemsPerPage"
+						total-items="total_count">
 						<td>{{inspect.index}}</td>
 						<td>{{inspect.fromTime | date: 'MM/dd/yyyy HH:mm:ss'}}</td>
 						<td>{{inspect.toTime | date: 'MM/dd/yyyy HH:mm:ss'}}</td>
@@ -180,6 +183,11 @@
 					</tr>
 				</tbody>
 			</table>
+			<div class="text-center">
+				<dir-pagination-controls max-size="itemsPerPage" direction-links="true"
+					boundary-links="true" on-page-change="doInspect(newPageNumber)">
+				</dir-pagination-controls>
+			</div>
 		</div>
 	</div>
 	<div id="graph-popup" class="popup">

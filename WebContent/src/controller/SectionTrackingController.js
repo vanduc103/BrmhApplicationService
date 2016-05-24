@@ -1,14 +1,18 @@
-var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 'ajoslin.promise-tracker', 'cgBusy']);
+var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 
+                                         'ajoslin.promise-tracker', 'cgBusy','angularUtils.directives.dirPagination']);
 
 datavisual.controller('SectionTrackingController', function($scope, $http, $interval) {
-	var BASE_URL = "http://localhost:9000/";
-	//var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://localhost:9000/";
+	var BASE_URL = "http://147.47.206.15:19000/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
 	$scope.loading = 'No data found !';
 	$scope.searchSectionName = "";
 	$scope.inspectList = [];
+	$scope.pageno = 1;
+	$scope.total_count = 0;
+	$scope.itemsPerPage = 10;
 	$scope.numberOfPeople = "";
 	var sectionId = 0; //default
 	var mapSectionName = 
@@ -70,22 +74,26 @@ datavisual.controller('SectionTrackingController', function($scope, $http, $inte
 								.attr("font-size", function(d) {return d[0].fontSize})
 								.attr("transform", function(d) {return "translate (" + xScale(d[0].x) + "," + yScale(d[0].y) + ") rotate("+d[0].transform+")"} )
 								.attr("fill", "black")
-								.style("opacity", 0.5);
+								.style("opacity", 0.5)
+								.on("click", clicked);
 		});
 		
-		function clicked(d_selected, i) {
+		function clicked(d_selected, i_selected) {
 			var x, y, k;
 			//selected
 			g.selectAll("path")
-		      .classed("selected", function(d) { return d === d_selected; });
+		      .classed("selected", function(d, i) { return i === i_selected; });
 			//set sectionId
-			sectionId = i + 1;
+			sectionId = i_selected + 1;
 			//set sectionName
 			$scope.searchSectionName = mapSectionName[sectionId];
 		}
 	};
 	
-	$scope.doInspect = function() {
+	$scope.doInspect = function(pageno) {
+		if(pageno === null || pageno === undefined) {
+			pageno = 1;
+		}
 		//get time
 		var fromTime = $("#datetimepicker1").data("DateTimePicker").date();
 		if(fromTime === null) {
@@ -103,18 +111,21 @@ datavisual.controller('SectionTrackingController', function($scope, $http, $inte
 		}
 		//search data
 		$scope.inspectList = [];
+		$scope.total_count = 0;
 		$scope.loading = 'Searching...';
 		$scope.numberOfPeople = 'Calculating...';
 		var url = BASE_URL + 'inspectSection?fromTime=' + fromTime + '&toTime=' + toTime
-						+ '&sectionId=' + sectionId;
+							+ '&sectionId=' + sectionId
+							+ '&pageIndex=' + pageno + '&pageSize=' + $scope.itemsPerPage;
 		$http.get(url).then(function(response) {
 			var data = response.data;
 			for(var i in data) {
-				data[i].index = parseInt(i)+1;
+				data[i].index = parseInt(i) + 1 + (pageno - 1) * $scope.itemsPerPage;
 				data[i].sectionName = mapSectionName[data[i].sectionId];
 				var macAddress = data[i].macAddress;
+				var shortedMac = macAddress.slice(0, 20) + "...";
 				var encodedMac = window.btoa(macAddress);
-				data[i].encodedMac = macAddress;
+				data[i].shortedMac = shortedMac;
 				//process period of time
 				var periodOfTime = data[i].periodOfTime;
 				var second = periodOfTime / 1000; //second
@@ -124,12 +135,13 @@ datavisual.controller('SectionTrackingController', function($scope, $http, $inte
 											: (minute>0) ? minute + ' minute(s)'
 													: second + ' seconds';
 				data[i].periodOfTime = periodOfTimeFormatted;
+				$scope.total_count = data[i].totalResult;
 			}
 			$scope.inspectList = data;
 			if($scope.inspectList.length <= 0) {
 				$scope.loading = 'No data found !';
 			}
-			$scope.numberOfPeople = $scope.inspectList.length;
+			$scope.numberOfPeople = $scope.total_count;
 		});
 	};
 	

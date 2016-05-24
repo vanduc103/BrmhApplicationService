@@ -1,13 +1,17 @@
-var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 'ajoslin.promise-tracker', 'cgBusy']);
+var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 
+                                         'ajoslin.promise-tracker', 'cgBusy','angularUtils.directives.dirPagination']);
 
 datavisual.controller('TimeTrackingController', function($scope, $http, $interval) {
-	var BASE_URL = "http://localhost:9000/";
-	//var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://localhost:9000/";
+	var BASE_URL = "http://147.47.206.15:19000/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
 	$scope.loading = 'No data found !';
 	$scope.inspectList = [];
+	$scope.pageno = 1;
+	$scope.total_count = 0;
+	$scope.itemsPerPage = 10;
 	$scope.fromTime = 0;
 	$scope.toTime = 0;
 	var mapSectionName = 
@@ -72,7 +76,10 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 		});
 	};
 	
-	$scope.doInspect = function() {
+	$scope.doInspect = function(pageno) {
+		if(pageno === null || pageno === undefined) {
+			pageno = 1;
+		}
 		//get time
 		var fromTime = $("#datetimepicker1").data("DateTimePicker").date();
 		if(fromTime === null) {
@@ -87,13 +94,16 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 		$scope.fromTime = fromTime; $scope.toTime = toTime;
 		//search data
 		$scope.inspectList = [];
+		$scope.total_count = 0;
 		$scope.loading = 'Searching...';
-		var url = BASE_URL + 'inspectTime?fromTime=' + fromTime + '&toTime=' + toTime;
+		var url = BASE_URL + 'inspectTime?fromTime=' + fromTime + '&toTime=' + toTime
+							+ '&pageIndex=' + pageno + '&pageSize=' + $scope.itemsPerPage;
 		$http.get(url).then(function(response) {
 			var data = response.data;
 			for(var i in data) {
-				data[i].index = parseInt(i)+1;
+				data[i].index = parseInt(i) + 1 + (pageno - 1) * $scope.itemsPerPage;
 				data[i].sectionName = mapSectionName[data[i].sectionId];
+				$scope.total_count = data[i].totalResult;
 			}
 			$scope.inspectList = data;
 			if($scope.inspectList.length <= 0) {
@@ -117,8 +127,6 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 			content += '<tr>';
 			content += '<th style="width:10px">#</th>';
 			content += '<th>MAC address</th>';
-			//content += '<th>Period</th>';
-			//content += '<th>First ~ Last</th>';
 			content += '</tr>';
 			content += '</thead>';
 			content += '<tbody>';
@@ -126,21 +134,10 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 			for(var i in data) {
 				var macAddress = data[i].macAddress;
 				var encodedMac = window.btoa(macAddress);
-				/*var firstTime = data[i].firstTime;
-				var lastTime = data[i].lastTime;
-				var periodOfTime = data[i].periodOfTime;
-				var second = periodOfTime / 1000; //second
-				var minute = Math.round(second/60);
-				var hour = Math.round(minute/60);
-				var periodOfTimeFormatted = (hour>0) ? hour + ' hour(s)'
-											: (minute>0) ? minute + ' minute(s)'
-													: second + ' seconds';*/
+				var shortedMac = macAddress.slice(0,20) + "...";
 				content += '<tr>';
 				content += '<td>' + (parseInt(i)+1) + '</td>';
-				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + encodedMac + '</a></td>';
-				//content += '<td>' + periodOfTimeFormatted + '</td>';
-				//content += '<td>' + dateFormat(firstTime,'MM/DD/YYYY HH:mm:ss');
-				//content += ' ~ ' + dateFormat(lastTime,'MM/DD/YYYY HH:mm:ss') + '</td>';
+				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + shortedMac + '</a></td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';

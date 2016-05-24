@@ -18,6 +18,8 @@
 <script type="text/javascript" src="../js/promise-tracker-http-interceptor.js"></script>
 <!-- cg-busy -->
 <script type="text/javascript" src="../js/angular-busy.js"></script>
+<!-- dirPagination -->
+<script type="text/javascript" src="../js/dirPagination.js"></script>
 <!-- D3JS -->
 <script type="text/javascript" src="../js/d3.min.js"></script>
 <!-- Datetime picker -->
@@ -56,9 +58,9 @@
 		<nav>
             <div class="center2 wrapper">
                 <a class="nav-item" href="index.html" title="Real-Time Tracking">Real-time Tracking</a>
-                <a class="nav-item" href="patient_tracking.html" title="Inspect Patient">Inspect Patient</a>
-                <a class="nav-item current" href="section_tracking.html" title="Inspect Section">Inspect Section</a>
                 <a class="nav-item" href="time_tracking.html" title="Inspect Time">Inspect Time</a>
+                <a class="nav-item current" href="section_tracking.html" title="Inspect Section">Inspect Section</a>
+                <a class="nav-item" href="patient_tracking.html" title="Inspect Patient">Inspect Patient</a>
             </div>
         </nav>
 	</div>
@@ -125,9 +127,10 @@
 					<tr ng-show="inspectList.length <= 0">
 						<td colspan="4" style="text-align: center;">{{loading}}</td>
 					</tr>
-					<tr ng-repeat="inspect in inspectList">
+					<tr dir-paginate="inspect in inspectList|itemsPerPage:itemsPerPage"
+						total-items="total_count">
 						<td>{{inspect.index}}</td>
-						<td><a class="a" ng-click="inspectMac(inspect.macAddress)" title="Inspect this Mac address">{{inspect.encodedMac}}</a></td>
+						<td><a class="a" ng-click="inspectMac(inspect.macAddress)" title="Inspect this Mac address">{{inspect.shortedMac}}</a></td>
 						<td>{{inspect.periodOfTime}}</td>
 						<td>
 							{{inspect.firstTime | date: 'MM/dd/yyyy HH:mm:ss'}} ~ 
@@ -136,6 +139,11 @@
 					</tr>
 				</tbody>
 			</table>
+			<div class="text-center">
+				<dir-pagination-controls max-size="10" direction-links="true"
+					boundary-links="true" on-page-change="doInspect(newPageNumber)">
+				</dir-pagination-controls>
+			</div>
 		</div>
 	</div>
 	<footer>

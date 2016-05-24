@@ -1,24 +1,40 @@
 var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 'ajoslin.promise-tracker', 'cgBusy']);
 
 datavisual.controller('RealtimeTrackingController', function($scope, $http, $interval) {
-	var BASE_URL = "http://localhost:9000/";
-	//var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://localhost:9000/";
+	var BASE_URL = "http://147.47.206.15:19000/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
+	var fromTime = 0, toTime = 0;
+	var trackingGroup = sessionStorage.getItem("trackingGroup");
+	if(trackingGroup === null || trackingGroup === undefined) {
+		trackingGroup = [];
+	} else {
+		try {
+			trackingGroup = JSON.parse(trackingGroup);
+		}catch(e) {
+			trackingGroup = [];
+		}
+	}
+	var trackingColor = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'violet'];
 	
 	var mapSectionName = 
 		{"1": "출입구","2":"복도", "3":"환자대기실","4":"복도 및 출입구","5":"경증환자실","6":"복도 및 중증환자실","7":"중증환자실"};
 	
 	//make from time and to time
-	var curDate = new Date();
-	
-	//to time = current date and time
-	var toTime = curDate.getTime();
-	//fromTime = toTime - 15 minutes
-	//var fromTime = toTime - 15*60*1000;
-	var fromTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate()-10, 0, 0, 0).getTime();
-	
+	var makeTime = function() {
+		var curDate = new Date();
+		
+		//to time = current date and time
+		toTime = curDate.getTime();
+		//one month ago
+		toTime = toTime - 30*24*60*60*1000;
+		//fromTime = toTime - 1 minutes
+		fromTime = toTime - 1*60*1000;
+		//var fromTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate()-10, 0, 0, 0).getTime();
+	}
+		
 	//init variable
 	var width = 624,
     height = 527,
@@ -33,6 +49,10 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 		.append("g");
 	var g = svg.append("g");
 	var centerJson = [];
+	// Define the div for the tooltip
+	var div = d3.select("body").append("div")	
+	    .attr("class", "tooltip")
+	    .style("opacity", 0);
 	//function init
 	var init = function() {
 		//draw polygon
@@ -45,10 +65,6 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			if(error) {
 				alert(error);
 			}
-			// Define the div for the tooltip
-			var div = d3.select("body").append("div")	
-			    .attr("class", "tooltip")				
-			    .style("opacity", 0);
 			//data from polygonData is push to lineFunction to draw line
 			var polygonText = polygon.text;
 			g.append("g")
@@ -142,6 +158,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 	};
 	
 	$scope.realTimeTracking = function() {
+		makeTime();
 		var peopleInSection = {};
 		var sectionArr = [];
 		//remove old elements
@@ -165,7 +182,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 				var center = [];
 				center.push(centerJson[sectionId - 1]);
 				var peopleCount = peopleInSection[sectionId];
-				if(peopleCount < 2) {
+				if(peopleCount < 10) {
 					imageWidth = imageHeight = 30;
 					circleRadius = 8;
 					fontSize = 12;
@@ -221,16 +238,6 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 		return numberValue;
 	}
 	
-	function dateFormat(dateValue, format) {
-		var d = new Date(dateValue);
-		//format hh:mm:ss
-		if(format === 'hh:mm:ss') {
-			return paddingZero(d.getHours()) + ':' 
-					+ paddingZero(d.getMinutes()) + ':' 
-					+ paddingZero(d.getSeconds());
-		}
-	}
-	
 	$scope.realTimeTrackingDetail = function(sectionId, x, y) {
 		var url = BASE_URL + 'getPeopleDetail?sectionId='+sectionId
 							+'&fromTime=' + fromTime + '&toTime=' + toTime;
@@ -244,8 +251,6 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			content += '<tr>';
 			content += '<th style="width:10px">#</th>';
 			content += '<th>MAC address</th>';
-			//content += '<th>From</th>';
-			//content += '<th>Period</th>';
 			content += '</tr>';
 			content += '</thead>';
 			content += '<tbody>';
@@ -253,19 +258,10 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			for(var i in data) {
 				var macAddress = data[i].macAddress;
 				var encodedMac = window.btoa(macAddress);
-				/*var firstTime = data[i].firstTime;
-				var periodOfTime = data[i].periodOfTime;
-				var second = periodOfTime / 1000; //second
-				var minute = Math.round(second/60);
-				var hour = Math.round(minute/60);
-				var periodOfTimeFormatted = (hour>0) ? hour + ' hour(s)'
-											: (minute>0) ? minute + ' minute(s)'
-													: second + ' seconds';*/
+				var showedMac = macAddress.slice(0, 20) + "...";
 				content += '<tr>';
 				content += '<td>' + (parseInt(i)+1) + '</td>';
-				content += '<td><a class="a inspectMac" id="mac_'+macAddress+'">' + macAddress + '</a></td>';
-				//content += '<td>' + dateFormat(firstTime,'hh:mm:ss') + '</td>';
-				//content += '<td>' + periodOfTimeFormatted + '</td>';
+				content += '<td><a class="a inspectMac" id="mac_'+macAddress+'" title="Tracking this Mac address">' + showedMac + '</a></td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';
@@ -282,8 +278,14 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
     	var id = e.target.id;
     	var inspectMac = id.slice(id.indexOf('_') + 1);
     	//call inspect patient page
-    	sessionStorage.setItem("inspectMac", inspectMac);
-    	document.location.href = 'patient_tracking.html';
+    	//sessionStorage.setItem("inspectMac", inspectMac);
+    	//document.location.href = 'patient_tracking.html';
+    	//tracking mac address real time
+    	if(trackingGroup.indexOf(inspectMac) === -1) {
+    		trackingGroup.push(inspectMac);
+    		$scope.realTimeTrackingPatient();
+    	}
+    	sessionStorage.setItem("trackingGroup", JSON.stringify(trackingGroup));
     });
 	
 	$('html').click(function() {
@@ -296,9 +298,140 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 		$scope.realTimeTrackingDetail(sectionId, d3.event.pageX, d3.event.pageY);
 	};
 	
+	$(document).on('click', 'img.closeImg', function(e) {
+    	var id = e.target.id;
+    	var macAddress = id.slice(id.indexOf('_') + 1);
+    	//remove from trackingGroup
+    	var index = trackingGroup.indexOf(macAddress);
+    	if(index > -1) {
+    		trackingGroup.splice(index, 1);
+    		//remove old elements
+			d3.select("#patientLocation_" + macAddress).remove();
+			//update session storage
+			sessionStorage.setItem("trackingGroup", JSON.stringify(trackingGroup));
+    	}
+    	$scope.realTimeTrackingPatient();
+	});
+	
+	$scope.addTrackingMac = function() {
+		var trackingMac = $("#inputTrackingMac").val();
+		if(trackingMac.trim() === '') {
+			alert('You must input tracking Mac address !');
+			return false;
+		}
+		//add to tracking group
+		if(trackingGroup.indexOf(trackingMac) === -1) {
+    		trackingGroup.push(trackingMac);
+    		$scope.realTimeTrackingPatient();
+    	}
+		sessionStorage.setItem("trackingGroup", JSON.stringify(trackingGroup));
+	}
+	
+	var div2 = d3.select("body").append("div")	
+	    .attr("class", "tooltip")
+	    .style("opacity", 0);
+	//tracking real time location of group of patients
+	$scope.realTimeTrackingPatient = function() {
+		makeTime();
+		fromTime = toTime - 10*60*1000;
+		var trackingInfo = "";
+		var colorByMac = {}; //map color by mac address
+		var locationTimes = {}; //a location belongs to how many tracking patient
+		//inspect to get location and time
+		for(var trackingIdx in trackingGroup) {
+			var trackingMac = trackingGroup[trackingIdx];
+			var showedMac = trackingMac.slice(0, 20) + "...";
+			var color = trackingColor[trackingIdx % trackingColor.length];
+			colorByMac[trackingMac] = color;
+			trackingInfo += "<img class='closeImg' id='closeImg_"+trackingMac+"' src='../images/close.png' width='18px' title='Remove this Mac address'/>"
+							+ "<font color='"+color+"'>" + showedMac + "</font>"
+							+ "<br/>"; 
+			var url = BASE_URL + 'inspectMac?fromTime=' + fromTime 
+								+ '&toTime=' + toTime
+								+ '&macAddress=' + trackingMac;
+			$http.get(url).then(function(response) {
+				var data = response.data;
+				//console.log(data);
+				var sectionId = 0, time = 0, macAddress = "";
+				for(var i in data) {
+					time = data[i].toTime;
+					sectionId = data[i].sectionId;
+					macAddress = data[i].macAddress;
+				}
+				//display on map
+				var circleRadius = 10;
+				var fontSize = 12;
+				if(sectionId > 0) {
+					//update location times
+					var count = locationTimes[sectionId];
+					if(count === null || count === undefined) {
+						count = 0;
+					}
+					else {
+						count++;
+					}
+					locationTimes[sectionId] = count;
+					console.log(locationTimes);
+					var timeFormatted = dateFormat(time, 'HH:mm:ss');
+					var tooltipContent = 'Mac address: ' + macAddress + '<br/>' 
+										+ 'Time: ' + timeFormatted;
+					var center = [];
+					center.push(centerJson[sectionId - 1]);
+					
+					//remove old elements
+					d3.select("#patientLocation_" + macAddress).remove();
+					var circleSelection = g
+						.append("g")
+						.attr("id", "patientLocation_" + macAddress)
+						.attr("transform", "translate("+(center[0].cx+count*circleRadius*2)+","+(center[0].cy-30)+")");
+					circleSelection
+						.append("circle")
+				        .attr("r", circleRadius)
+				        .style("fill", colorByMac[macAddress])
+				        .on("mouseover", function(d, i) {
+							div2.transition()
+				                .duration(200)
+				                .style("opacity", .9);
+							div2.html(tooltipContent)
+								.style("left", (d3.event.pageX) + "px")
+								.style("top", (d3.event.pageY - 28) + "px")
+								.style("font-size", "12px")
+								.style("font-weight", "normal")
+								.style("text-align", "left")
+						})
+						.on("mouseout", function(d) {
+							div2.transition()
+			                	.duration(500)
+			                	.style("opacity", 0);
+						});
+					/*var textSelection = circleSelection
+			    		.append("text")
+						.attr("x", 0)
+						.attr("y", -10)
+						.text(""+timeFormatted)
+						.attr("font-family", "sans-serif")
+						.attr("font-size", fontSize+ "px")
+						.style("font-weight", "normal")
+						.attr("text-anchor", "middle")
+						.attr("fill", "black");*/
+				}
+			});
+		}
+		$("#trackingGroupDiv").html(trackingInfo);
+	};
+	
+	function dateFormat(dateValue, format) {
+		var d = moment(dateValue);
+		return d.format(format);
+	};
+	
 	//init
 	init();
 	$scope.realTimeTracking();
-	//cycle
-	$interval($scope.realTimeTracking, 3 * 10 * 1000);
+	//tracking all
+	var cycle = 15 * 1000;
+	$interval($scope.realTimeTracking, cycle);
+	//tracking patients
+	$scope.realTimeTrackingPatient();
+	$interval($scope.realTimeTrackingPatient, cycle);
 });

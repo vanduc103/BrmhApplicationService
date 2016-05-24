@@ -1,8 +1,9 @@
-var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 'ajoslin.promise-tracker', 'cgBusy']);
+var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 
+                                         'ajoslin.promise-tracker', 'cgBusy', 'angularUtils.directives.dirPagination']);
 
 datavisual.controller('PatientTrackingController', function($scope, $http, $interval) {
-	var BASE_URL = "http://localhost:9000/";
-	//var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://localhost:9000/";
+	var BASE_URL = "http://147.47.206.15:19000/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
@@ -11,6 +12,9 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 	var sectionList = [];
 	var sectionAnimationList = [];
 	$scope.inspectList = [];
+	$scope.pageno = 1;
+	$scope.total_count = 0;
+	$scope.itemsPerPage = 10;
 	$scope.encodedMac = "";
 	var inspectMacAddress = "";
 	var inspectFromTime = 0;
@@ -86,24 +90,11 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 		});
 		
 		function mouseovered(active, i) {
-			/*if(inspectMacAddress === '') return;
-			var className = this.getAttribute('class');
-			var content = '';
-			if(className === 'selected') {
-				content = 'This person was in this section';
-			}
-			else {
-				content = 'This person was not in this section';
-			}
-			//show the popup
-			$('#detail-popup').html(content);
-			$('#detail-popup').css('top', d3.event.pageY);
-			$('#detail-popup').css('left', d3.event.pageX);
-			$('#detail-popup').fadeIn('fast');*/
+			
 		};
 	};
 	
-	$scope.doInspect = function() {
+	$scope.doInspect = function(pageno) {
 		//get time
 		var fromTime = $("#datetimepicker1").data("DateTimePicker").date();
 		if(fromTime === null) {
@@ -127,28 +118,33 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 		inspectToTime = toTime;
 		inspectMacAddress = macAddress;
 		//encode mac address
-		$scope.encodedMac = window.btoa(macAddress);
+		$scope.encodedMac = macAddress;//window.btoa(macAddress);
 		//search data
 		$scope.inspectList = [];
+		$scope.total_count = 0;
 		$scope.loading = 'Searching...';
+		//clear highlight
+		d3.select("#animationPerson").remove();
+		//search condition
 		var url = BASE_URL + 'inspectMac?fromTime=' + fromTime + '&toTime=' + toTime
-						+ '&macAddress=' + macAddress;
+						+ '&macAddress=' + macAddress
+						+ '&pageIndex=' + pageno + '&pageSize=' + $scope.itemsPerPage;
 		$http.get(url).then(function(response) {
 			var data = response.data;
 			sectionList = []; //reset
 			for(var i in data) {
-				data[i].index = (parseInt(i)+1);
+				data[i].index = parseInt(i) + 1 + (pageno - 1) * $scope.itemsPerPage;
 				data[i].sectionName = mapSectionName[data[i].sectionId];
 				sectionList = data[i].sectionList;
 				data[i].peopleContacted = 'Calculating...';
+				$scope.total_count = data[i].totalResult;
 			}
 			$scope.inspectList = data;
 			if($scope.inspectList.length <= 0) {
 				$scope.loading = 'No data found !';
 				return;
 			}
-			//clear highlight
-			d3.select("#animationPerson").remove();
+			//show hightlight
 			g.selectAll("path").classed("selected", false);
 			//highlight section
 			g.selectAll("path")
@@ -190,6 +186,9 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 		});
 	};
 	
+	//define basic paths on map
+	var basicPaths = [[2,1],[2,4],[2,3,5],[2,6,7]];
+	//draw animation
 	$scope.doAnimate = function() {
 		var length = sectionAnimationList.length;
 		if(length === 0) return;
@@ -221,18 +220,58 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 			.attr("text-anchor", "middle")
 			.attr("fill", "black");
 		//loop for sectionList to make animation
+		var preSection = sectionId;
 		for(var i = 1;i < length; i++) {
 			var sectionId = sectionAnimationList[i].sectionId;
 			var fromTime = sectionAnimationList[i].fromTime;
 			var fromTimeFormated = dateFormat(fromTime, timeFormat);
-			var cx = xScale(centerJson[sectionId - 1].cx);
-			var cy = yScale(centerJson[sectionId - 1].cy);
-			circleSelection = circleSelection
-								.transition().duration(2000)
-								.attr("transform", function(d) {return "translate("+cx+","+cy+")"});
-			textSelection = textSelection
+			//calculate all paths from preSection to current sectionId
+			//based on basic paths
+			var path1 = '', path2 = '';
+			for(var j in basicPaths) {
+				var index1 = basicPaths[j].indexOf(preSection);
+				var index2 = basicPaths[j].indexOf(sectionId);
+				//case: preSection and sectionId both in 1 basic path
+				if(index1 > -1 && index2 > -1) {
+					path1 = preSection + ',';
+					path2 = sectionId + ',';
+					break;
+				}
+				//case: preSection and sectionId in 2 basic paths
+				//get the path for each through section 2
+				else {
+					if(index1 > -1) {
+						//reverse the basic path
+						for(var k=index1; k >= 0; k--) {
+							path1 += basicPaths[j][k] + ',';
+						}
+					}
+					else if(index2 > -1) {
+						//follow the basic path (not count first section)
+						for(var k=1; k <= index2; k++) {
+							path2 += basicPaths[j][k] + ',';
+						}
+					}
+				}
+			}
+			var path = path1 + path2;
+			path = path.slice(0, path.length - 1);
+			var sectionsOnPath = path.split(',');
+			
+			for(var k in sectionsOnPath) {
+				var sectionId = sectionsOnPath[k];
+				var cx = xScale(centerJson[sectionId - 1].cx);
+				var cy = yScale(centerJson[sectionId - 1].cy);
+				
+				circleSelection = circleSelection
+									.transition().duration(2000)
+									.attr("transform", function(d) {return "translate("+cx+","+cy+")"});
+				textSelection = textSelection
 								.transition().duration(2000)
 								.text("" + fromTimeFormated);
+			}
+			//update preSection
+			preSection = parseInt(sectionId);
 		}
 	};
 	
@@ -264,16 +303,17 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 			var data = response.data;
 			var index = 0;
 			for(var i in data) {
-				index = i;
+				index++;
 				var macAddress = data[i].macAddress;
 				if(macAddress === inspectMacAddress) {
 					index -= 1;
 					continue;
 				}
 				var encodedMac = window.btoa(macAddress);
+				var showedMac = macAddress.slice(0, 20) + "...";
 				content += '<tr>';
-				content += '<td>' + (parseInt(index)+1) + '</td>';
-				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + encodedMac + '</a></td>';
+				content += '<td>' + (parseInt(index)) + '</td>';
+				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + showedMac + '</a></td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';
@@ -371,8 +411,6 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 	        .attr("y", height/3)
 	        .attr("width", 100)
 	        .attr("height", 100);
-		//test data: FB5431F7E024DC2E349E105A4EF6820E199FFDCAB6C9CE8C89F351891C4A9AF8
-		//time: 2016-05-10 22:10:00
 		//data
 		var nodes = [];
 		var links = [];
