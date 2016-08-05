@@ -2,8 +2,9 @@ var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate',
                                          'ajoslin.promise-tracker', 'cgBusy', 'angularUtils.directives.dirPagination']);
 
 datavisual.controller('PatientTrackingController', function($scope, $http, $interval) {
-//	var BASE_URL = "http://localhost:9000/";
-	var BASE_URL = "http://147.47.206.15:19000/";
+	var BASE_URL = "http://localhost:9000/";
+//	var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://147.47.206.15:29001/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
@@ -233,8 +234,11 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 				var index2 = basicPaths[j].indexOf(sectionId);
 				//case: preSection and sectionId both in 1 basic path
 				if(index1 > -1 && index2 > -1) {
-					path1 = preSection + ',';
-					path2 = sectionId + ',';
+					for(k=index1; (index1<=index2) ? k <= index2 : k>=index2; 
+									(index1<=index2) ? k++ : k--) {
+						path1 += basicPaths[j][k] + ',';
+						path2 = '';
+					}
 					break;
 				}
 				//case: preSection and sectionId in 2 basic paths
@@ -310,7 +314,7 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 					continue;
 				}
 				var encodedMac = window.btoa(macAddress);
-				var showedMac = macAddress.slice(0, 20) + "...";
+				var showedMac = (macAddress.length > 20) ? (macAddress.slice(0, 20) + "...") : macAddress;
 				content += '<tr>';
 				content += '<td>' + (parseInt(index)) + '</td>';
 				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + showedMac + '</a></td>';
@@ -500,12 +504,13 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 			node.append("title")
 		      .text(function(d) { 
 		    	  if(d.name === inspectMacAddress) {
-		    		  return "Inspecting MAC: " + d.name;
+		    		  return "Inspect MAC: " + d.name;
     		  	  }
 		    	  else {
 		    		  var content = "MAC address: " + d.name;
+		    		  content += "\nContact Time:";
 		    		  content += "\nFrom: " + dateFormat(d.fromTime, timeFormat);
-		    		  content += "\nTo: " + dateFormat(d.toTime, timeFormat);
+		    		  content += "\nTo       : " + dateFormat(d.toTime, timeFormat);
 		    		  return content;
 		    	  }
 	    	  });

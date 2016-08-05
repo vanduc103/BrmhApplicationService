@@ -2,8 +2,9 @@ var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate',
                                          'ajoslin.promise-tracker', 'cgBusy','angularUtils.directives.dirPagination']);
 
 datavisual.controller('TimeTrackingController', function($scope, $http, $interval) {
-//	var BASE_URL = "http://localhost:9000/";
-	var BASE_URL = "http://147.47.206.15:19000/";
+	var BASE_URL = "http://localhost:9000/";
+//	var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://147.47.206.15:29001/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
@@ -91,6 +92,9 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 		if(toTime === null) {
 			toTime = new Date().getTime();
 		}
+		else {
+			toTime = toTime.unix() * 1000;
+		}
 		$scope.fromTime = fromTime; $scope.toTime = toTime;
 		//search data
 		$scope.inspectList = [];
@@ -134,10 +138,10 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 			for(var i in data) {
 				var macAddress = data[i].macAddress;
 				var encodedMac = window.btoa(macAddress);
-				var shortedMac = macAddress.slice(0,20) + "...";
+				var showedMac = (macAddress.length > 20) ? (macAddress.slice(0, 20) + "...") : macAddress;
 				content += '<tr>';
 				content += '<td>' + (parseInt(i)+1) + '</td>';
-				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + shortedMac + '</a></td>';
+				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + showedMac + '</a></td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';

@@ -47,6 +47,7 @@
 <script type="text/javascript" src="controller/RealtimeTrackingController.js"></script>
 
 </head>
+<title>BRMH - 서울대학교병원운영 서울특별시보라매병원</title>
 <body ng-controller="RealtimeTrackingController">
 
 	<div>
@@ -59,6 +60,7 @@
                 <a class="nav-item" href="time_tracking.html" title="Inspect Time">Inspect Time</a>
                 <a class="nav-item" href="section_tracking.html" title="Inspect Section">Inspect Section</a>
                 <a class="nav-item" href="patient_tracking.html" title="Inspect Patient">Inspect Patient</a>
+                <a class="nav-item" href="statistic.html" title="Statistic">Statistic</a>
             </div>
         </nav>
 	</div>
@@ -73,7 +75,7 @@
 	<div class="container">
 		<div style="float: left;">
 			Tracking Mac address:<br>
-			<input type="text" placeholder="Input Mac address" id="inputTrackingMac">
+			<input type="text" placeholder="Enter Mac address" id="inputTrackingMac">
 			<img alt="Add" src="../images/add.png" width="18" title="Add to track" ng-click="addTrackingMac()">
 			<div id="trackingGroupDiv"></div>
 		</div>

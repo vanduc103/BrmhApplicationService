@@ -1,13 +1,14 @@
 var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate', 'ajoslin.promise-tracker', 'cgBusy']);
 
 datavisual.controller('RealtimeTrackingController', function($scope, $http, $interval) {
-//	var BASE_URL = "http://localhost:9000/";
-	var BASE_URL = "http://147.47.206.15:19000/";
+	var BASE_URL = "http://localhost:9000/";
+//	var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://147.47.206.15:29001/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
 	var fromTime = 0, toTime = 0;
-	var trackingGroup = sessionStorage.getItem("trackingGroup");
+	var trackingGroup = sessionStorage.trackingGroup;
 	if(trackingGroup === null || trackingGroup === undefined) {
 		trackingGroup = [];
 	} else {
@@ -29,9 +30,10 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 		//to time = current date and time
 		toTime = curDate.getTime();
 		//one month ago
-		toTime = toTime - 30*24*60*60*1000;
+		//toTime = toTime - 30*24*60*60*1000;
+		//toTime = toTime - 9 * 60 * 60 * 1000;
 		//fromTime = toTime - 1 minutes
-		fromTime = toTime - 1*60*1000;
+		fromTime = toTime - 5*60*1000;
 		//var fromTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate()-10, 0, 0, 0).getTime();
 	}
 		
@@ -67,6 +69,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			}
 			//data from polygonData is push to lineFunction to draw line
 			var polygonText = polygon.text;
+			centerJson = polygon.center;
 			g.append("g")
 					.selectAll("path")
 					.data(polygon.section)
@@ -94,8 +97,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			var text = g.append("g").selectAll("text")
 									.data(polygon.text)
 									.enter()
-									.append("text")
-									.on("click", clicked);
+									.append("text");
 			//for rotate -> not set x, y but set translate in transform attr.
 			var textLabels = text
 								.text(function(d) {return d[0].text})
@@ -104,7 +106,6 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 								.attr("transform", function(d) {return "translate (" + d[0].x + "," + d[0].y + ") rotate("+d[0].transform+")"} )
 								.attr("fill", "black")
 								.style("opacity", 0.5);
-			centerJson = polygon.center;
 		});
 	
 		function cal_centroid(data) {
@@ -239,6 +240,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 	}
 	
 	$scope.realTimeTrackingDetail = function(sectionId, x, y) {
+		makeTime();
 		var url = BASE_URL + 'getPeopleDetail?sectionId='+sectionId
 							+'&fromTime=' + fromTime + '&toTime=' + toTime;
 		$http.get(url).then(function(response) {
@@ -258,7 +260,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 			for(var i in data) {
 				var macAddress = data[i].macAddress;
 				var encodedMac = window.btoa(macAddress);
-				var showedMac = macAddress.slice(0, 20) + "...";
+				var showedMac = (macAddress.length > 20) ? (macAddress.slice(0, 20) + "...") : macAddress;
 				content += '<tr>';
 				content += '<td>' + (parseInt(i)+1) + '</td>';
 				content += '<td><a class="a inspectMac" id="mac_'+macAddress+'" title="Tracking this Mac address">' + showedMac + '</a></td>';
@@ -305,10 +307,10 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
     	var index = trackingGroup.indexOf(macAddress);
     	if(index > -1) {
     		trackingGroup.splice(index, 1);
+    		//update session storage
+			sessionStorage.trackingGroup = JSON.stringify(trackingGroup);
     		//remove old elements
-			d3.select("#patientLocation_" + macAddress).remove();
-			//update session storage
-			sessionStorage.setItem("trackingGroup", JSON.stringify(trackingGroup));
+			d3.select("#patientLocation_" + macAddress.replace(/:/g,"")).remove();
     	}
     	$scope.realTimeTrackingPatient();
 	});
@@ -324,7 +326,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
     		trackingGroup.push(trackingMac);
     		$scope.realTimeTrackingPatient();
     	}
-		sessionStorage.setItem("trackingGroup", JSON.stringify(trackingGroup));
+		sessionStorage.trackingGroup = JSON.stringify(trackingGroup);
 	}
 	
 	var div2 = d3.select("body").append("div")	
@@ -340,7 +342,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 		//inspect to get location and time
 		for(var trackingIdx in trackingGroup) {
 			var trackingMac = trackingGroup[trackingIdx];
-			var showedMac = trackingMac.slice(0, 20) + "...";
+			var showedMac = (trackingMac.length > 20) ? (trackingMac.slice(0, 20) + "...") : trackingMac;
 			var color = trackingColor[trackingIdx % trackingColor.length];
 			colorByMac[trackingMac] = color;
 			trackingInfo += "<img class='closeImg' id='closeImg_"+trackingMac+"' src='../images/close.png' width='18px' title='Remove this Mac address'/>"
@@ -351,7 +353,6 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 								+ '&macAddress=' + trackingMac;
 			$http.get(url).then(function(response) {
 				var data = response.data;
-				//console.log(data);
 				var sectionId = 0, time = 0, macAddress = "";
 				for(var i in data) {
 					time = data[i].toTime;
@@ -371,7 +372,6 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 						count++;
 					}
 					locationTimes[sectionId] = count;
-					console.log(locationTimes);
 					var timeFormatted = dateFormat(time, 'HH:mm:ss');
 					var tooltipContent = 'Mac address: ' + macAddress + '<br/>' 
 										+ 'Time: ' + timeFormatted;
@@ -379,10 +379,10 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 					center.push(centerJson[sectionId - 1]);
 					
 					//remove old elements
-					d3.select("#patientLocation_" + macAddress).remove();
+					d3.select("#patientLocation_" + macAddress.replace(/:/g,"")).remove();
 					var circleSelection = g
 						.append("g")
-						.attr("id", "patientLocation_" + macAddress)
+						.attr("id", "patientLocation_" + macAddress.replace(/:/g,""))
 						.attr("transform", "translate("+(center[0].cx+count*circleRadius*2)+","+(center[0].cy-30)+")");
 					circleSelection
 						.append("circle")
@@ -427,9 +427,10 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 	
 	//init
 	init();
+	setTimeout(function(){}, 1000);
 	$scope.realTimeTracking();
 	//tracking all
-	var cycle = 15 * 1000;
+	var cycle = 15 * 1000; //15 seconds
 	$interval($scope.realTimeTracking, cycle);
 	//tracking patients
 	$scope.realTimeTrackingPatient();

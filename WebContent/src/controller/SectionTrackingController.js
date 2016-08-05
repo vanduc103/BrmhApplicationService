@@ -2,8 +2,9 @@ var datavisual = angular.module('brmh', ['ui.bootstrap', 'ngAnimate',
                                          'ajoslin.promise-tracker', 'cgBusy','angularUtils.directives.dirPagination']);
 
 datavisual.controller('SectionTrackingController', function($scope, $http, $interval) {
-//	var BASE_URL = "http://localhost:9000/";
-	var BASE_URL = "http://147.47.206.15:19000/";
+	var BASE_URL = "http://localhost:9000/";
+//	var BASE_URL = "http://147.47.206.15:19000/";
+//	var BASE_URL = "http://147.47.206.15:29001/";
 	$scope.message = 'Please Wait...';
 	$scope.backdrop = true;
 	$scope.promise = null;
@@ -123,7 +124,7 @@ datavisual.controller('SectionTrackingController', function($scope, $http, $inte
 				data[i].index = parseInt(i) + 1 + (pageno - 1) * $scope.itemsPerPage;
 				data[i].sectionName = mapSectionName[data[i].sectionId];
 				var macAddress = data[i].macAddress;
-				var shortedMac = macAddress.slice(0, 20) + "...";
+				var shortedMac = (macAddress.length > 20) ? (macAddress.slice(0, 20) + "...") : macAddress;
 				var encodedMac = window.btoa(macAddress);
 				data[i].shortedMac = shortedMac;
 				//process period of time
