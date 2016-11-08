@@ -30,7 +30,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 		//to time = current date and time
 		toTime = curDate.getTime();
 		//one month ago
-		//toTime = toTime - 30*24*60*60*1000;
+		//toTime = toTime - 81*24*60*60*1000;
 		//toTime = toTime - 9 * 60 * 60 * 1000;
 		//fromTime = toTime - 1 minutes
 		fromTime = toTime - 5*60*1000;
@@ -164,8 +164,13 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 		var sectionArr = [];
 		//remove old elements
 		d3.selectAll(".myCircleText").remove();
+		$.LoadingOverlay("show");
+		// Hide it after 3 seconds
+		setTimeout(function(){
+		    $.LoadingOverlay("hide");
+		}, 3000);
 		//create new elements
-		var url = BASE_URL + 'countPeople?fromTime=' + fromTime + '&toTime=' + toTime;
+		var url = BASE_URL + 'countPeopleRealtime?fromTime=' + fromTime + '&toTime=' + toTime;
 		$http.get(url).then(function(response) {
 			var data = response.data;
 			for(var i in data) {
@@ -228,6 +233,7 @@ datavisual.controller('RealtimeTrackingController', function($scope, $http, $int
 					.style("font-weight", "bold")
 					.attr("text-anchor", "middle")
 					.attr("fill", "black");
+				$.LoadingOverlay("hide");
 			}
 		});
 	};

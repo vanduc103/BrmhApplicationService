@@ -25,6 +25,8 @@
 <!-- Datetime picker -->
 <script type="text/javascript" src="../js/moment.min.js"></script>
 <script type="text/javascript" src="../js/bootstrap-datetimepicker.min.js"></script>
+<!-- Loading overlay -->
+<script type="text/javascript" src="../js/loadingoverlay.js"></script>
 
 <!-- CSS -->
 <link href="../css/bootstrap.min.css" rel="stylesheet" type="text/css">
@@ -124,7 +126,7 @@
 					<tr dir-paginate="inspect in inspectList|itemsPerPage:itemsPerPage"
 						total-items="total_count">
 						<td>{{inspect.index}}</td>
-						<td><a class="a" ng-click="inspectMac(inspect.macAddress)" title="Inspect this Mac address">{{inspect.shortedMac}}</a></td>
+						<td><a class="a" ng-click="inspectMac(inspect.macAddress)" title="Inspect this people">{{inspect.shortedMac}}</a></td>
 						<td>{{inspect.periodOfTime}}</td>
 						<td>
 							{{inspect.firstTime | date: 'MM/dd/yyyy HH:mm:ss'}} ~ 

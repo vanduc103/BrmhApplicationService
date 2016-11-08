@@ -100,9 +100,11 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 		$scope.inspectList = [];
 		$scope.total_count = 0;
 		$scope.loading = 'Searching...';
+		$.LoadingOverlay("show");
 		var url = BASE_URL + 'inspectTime?fromTime=' + fromTime + '&toTime=' + toTime
 							+ '&pageIndex=' + pageno + '&pageSize=' + $scope.itemsPerPage;
 		$http.get(url).then(function(response) {
+			$.LoadingOverlay("hide");
 			var data = response.data;
 			for(var i in data) {
 				data[i].index = parseInt(i) + 1 + (pageno - 1) * $scope.itemsPerPage;
@@ -119,9 +121,11 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 	$scope.viewDetail = function(event, sectionId) {
 		var fromTime = $scope.fromTime;
 		var toTime = $scope.toTime;
-		var url = BASE_URL + 'getPeopleDetail?sectionId='+sectionId
+		$.LoadingOverlay("show");
+		var url = BASE_URL + 'getListPeople?sectionId='+sectionId
 							+'&fromTime=' + fromTime + '&toTime=' + toTime;
 		$http.get(url).then(function(response) {
+			$.LoadingOverlay("hide");
 			var data = response.data;
 			//content to show on popup
 			var content = '';
@@ -141,7 +145,7 @@ datavisual.controller('TimeTrackingController', function($scope, $http, $interva
 				var showedMac = (macAddress.length > 20) ? (macAddress.slice(0, 20) + "...") : macAddress;
 				content += '<tr>';
 				content += '<td>' + (parseInt(i)+1) + '</td>';
-				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + showedMac + '</a></td>';
+				content += '<td><a class="a inspectMac" title="Inspect this people" id="mac_'+macAddress+'">' + showedMac + '</a></td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';

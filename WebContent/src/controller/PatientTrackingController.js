@@ -291,7 +291,7 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 		if(peopleContacted === 0) {
 			return;
 		}
-		var url = BASE_URL + 'getPeopleDetail?fromTime=' + fromTime + '&toTime=' + toTime
+		var url = BASE_URL + 'getListPeople?fromTime=' + fromTime + '&toTime=' + toTime
 							+ '&sectionId=' + sectionId;
 		$http.get(url).then(function(response) {
 			var content = '';
@@ -317,7 +317,7 @@ datavisual.controller('PatientTrackingController', function($scope, $http, $inte
 				var showedMac = (macAddress.length > 20) ? (macAddress.slice(0, 20) + "...") : macAddress;
 				content += '<tr>';
 				content += '<td>' + (parseInt(index)) + '</td>';
-				content += '<td><a class="a inspectMac" title="Inspect this Mac address" id="mac_'+macAddress+'">' + showedMac + '</a></td>';
+				content += '<td><a class="a inspectMac" title="Inspect this people" id="mac_'+macAddress+'">' + showedMac + '</a></td>';
 				content += '</tr>';
 			}
 			content += '</tbody>';

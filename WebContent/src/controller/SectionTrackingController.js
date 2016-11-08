@@ -115,10 +115,12 @@ datavisual.controller('SectionTrackingController', function($scope, $http, $inte
 		$scope.total_count = 0;
 		$scope.loading = 'Searching...';
 		$scope.numberOfPeople = 'Calculating...';
+		$.LoadingOverlay("show");
 		var url = BASE_URL + 'inspectSection?fromTime=' + fromTime + '&toTime=' + toTime
 							+ '&sectionId=' + sectionId
 							+ '&pageIndex=' + pageno + '&pageSize=' + $scope.itemsPerPage;
 		$http.get(url).then(function(response) {
+			$.LoadingOverlay("hide");
 			var data = response.data;
 			for(var i in data) {
 				data[i].index = parseInt(i) + 1 + (pageno - 1) * $scope.itemsPerPage;
